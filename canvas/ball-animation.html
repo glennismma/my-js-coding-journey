@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Balls with Lines</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const balls = [];
+        const collisionSpeedReduction = 0.9;
+
+        function createBall() {
+            const ball = {
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: Math.random() * (canvas.height - 40) + 20,
+                dx: Math.random() * 2 - 1,
+                dy: Math.random() * 2 - 1,
+                radius: Math.random() * 20 + 10,
+                color: getRandomColor()
+            };
+
+            balls.push(ball);
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color + '80'; // Add alpha for semi-transparency
+        }
+
+        function drawBall(ball) {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.strokeStyle = '#000'; // Black outline
+            ctx.lineWidth = 2; // Set the line width
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawLine(ball1, ball2) {
+            ctx.beginPath();
+            ctx.moveTo(ball1.x, ball1.y);
+            ctx.lineTo(ball2.x, ball2.y);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function distanceBetween(ball1, ball2) {
+            const dx = ball1.x - ball2.x;
+            const dy = ball1.y - ball2.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function repelBalls(ball1, ball2) {
+            const dx = ball1.x - ball2.x;
+            const dy = ball1.y - ball2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < ball1.radius + ball2.radius) {
+                // Calculate repulsion force
+                const repulsionForce = 1;
+
+                // Apply force to both balls
+                ball1.dx += (dx / distance) * repulsionForce;
+                ball1.dy += (dy / distance) * repulsionForce;
+                ball2.dx -= (dx / distance) * repulsionForce;
+                ball2.dy -= (dy / distance) * repulsionForce;
+
+                // Reduce overall speed upon collision
+                ball1.dx *= collisionSpeedReduction;
+                ball1.dy *= collisionSpeedReduction;
+                ball2.dx *= collisionSpeedReduction;
+                ball2.dy *= collisionSpeedReduction;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw lines between all ball centers
+            for (let i = 0; i < balls.length; i++) {
+                const currentBall = balls[i];
+                for (let j = i + 1; j < balls.length; j++) {
+                    const otherBall = balls[j];
+                    drawLine(currentBall, otherBall);
+                }
+            }
+
+            // Draw the balls after lines to appear on top
+            for (const ball of balls) {
+                drawBall(ball);
+
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+
+                // Collision detection with walls
+                if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                    ball.dx = -ball.dx;
+                }
+
+                if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                    ball.dy = -ball.dy;
+                }
+
+                // Repel balls upon collision
+                for (const otherBall of balls) {
+                    if (ball !== otherBall) {
+                        repelBalls(ball, otherBall);
+                    }
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        // Create several bouncing balls
+        for (let i = 0; i < 5; i++) {
+            createBall();
+        }
+
+        draw();
+    </script>
+</body>
+</html>
